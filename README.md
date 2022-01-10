@@ -25,3 +25,24 @@ arguments.
 
 For further information, see the [webpage](http://klee.github.io/).
 # Concolic_klee
+
+In our implementation of concolic execution, we first record the trace
+of running KLEE with concrete input, then direct the symbolic executor
+using the concrete path. In the first run, we record every branch
+encountered and log information such as the program counter, branch
+conditions, and source code line. We then re-run KLEE with symbolic
+input and follow the concrete trace to create constraint sets for each
+step. We modified the `Executor::fork function` so that instead
+of actually forking, KLEE picks the successor state that corresponds to
+the next entry in the trace. When KLEE reaches the memory bug, KLEE will
+send the constraint sets to the solver. If the solver raises an error
+state, it means that KLEE would be able to find the bug, if given
+sufficient time to search all paths. Otherwise, we mark the bug as
+missed, meaning that KLEE's environment model or execution were not
+sufficient to uncover the bug.
+
+We ignore paths in all libc functions during replay and assume that they behave the same,
+despite the difference between symbolic and concrete environment. An 
+exception is the compare functions, e.g. strcmp, memcmp, 
+etc. Concolic KLEE replay follows the branch conditions in such functions
+because they do not involve the environment and are essential for computing the correct path conditions.
